@@ -7,6 +7,7 @@ The main documentation can be found on the [twiki.](https://twiki.cern.ch/twiki/
 
 To checkout
 
+```bash
 scram pro CMSSW CMSSW_6_0_1_PostLS1v2_patch4
 cd CMSSW_6_0_1_PostLS1v2_patch4/src/
 
@@ -24,3 +25,4 @@ git clone https://github.com/tmrhombus/UCT2015.git
 
 cd ../
 scramv1 build
+```
