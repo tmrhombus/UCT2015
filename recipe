@@ -5,8 +5,11 @@ cvs co -r UCT2015_v4 L1Trigger/RegionalCaloTrigger
 addpkg DataFormats/L1CaloTrigger 
 addpkg L1TriggerConfig/L1ScalesProducers
 patch -N -p0 < L1Trigger/RegionalCaloTrigger/eic9bit.patch
+
 # Tags for rerunning current recommended offline tau sequences
-# see: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuidePFTauID#Recommended_tags_for_2012_data_a
+# see: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuidePFTauID
+#Recommended_tags_for_2012_data_a
+
 cvs co -r V01-04-25 RecoTauTag/RecoTau 
 cvs co -r V01-04-13 RecoTauTag/Configuration
 cvs co -r V00-04-00 CondFormats/EgammaObjects
