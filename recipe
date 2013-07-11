@@ -1,6 +1,5 @@
 cd $CMSSW_BASE/src
 
-cvs co -r V00-03-00 -d L1Trigger/UCT2015 UserCode/dasu/L1Trigger/UCT2015
 cvs co -r UCT2015_v4 L1Trigger/RegionalCaloTrigger
 addpkg DataFormats/L1CaloTrigger 
 addpkg L1TriggerConfig/L1ScalesProducers
