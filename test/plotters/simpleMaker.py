@@ -16,13 +16,12 @@ def histogram(tree, var, sel, binning, xaxis='', title='',cal=1.):
  return output_histo
 
 def hist2Dfriend(treeA,friendB,varA,varB,selA,selB,
-binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.):
+binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
  ''' make a 2D histogram, trees better be friends (: '''
- draw_string = "(%s * %0.2f):(%s.%s * %0.2f)" % (varA,calA,friendB,varB,calB)
+ frVarB = friendInsert(friendB,varB)
+ draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,frVarB,calB)
  cutB = friendCut(friendB,selB)
  cut = cutString(selA+cutB)
- #print(draw_string)
- #print(cut)
  htemp = TH2D("htemp","htemp",
   binA[0],binA[1],binA[2],
   binB[0],binB[1],binB[2])
@@ -30,19 +29,60 @@ binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.):
  htemp.GetXaxis().SetTitle(xaxis)
  htemp.GetYaxis().SetTitle(yaxis)
  htemp.SetTitle(title)
+ #print(draw_string)
+ #print(cut)
+ if logg is not None:
+  logg.write('Draw String: '+draw_string+'\n')
+  logg.write('Cut String:  '+cut+'\n\n')
  return htemp
 
-def friendCut(friend,cuts=['2>1','2>1']):
+def hist2D(treeA,friendB,varA,varB,selA,selB,
+binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
+ ''' make a 2D histogram, put friend in axis by hand '''
+ draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,varB,calB)
+ cutB = friendCut(friendB,selB)
+ cut = cutString(selA+cutB)
+ htemp = TH2D("htemp","htemp",
+  binA[0],binA[1],binA[2],
+  binB[0],binB[1],binB[2])
+ treeA.Draw(draw_string+'>>htemp',cut,style)
+ htemp.GetXaxis().SetTitle(xaxis)
+ htemp.GetYaxis().SetTitle(yaxis)
+ htemp.SetTitle(title)
+ #print(draw_string)
+ #print(cut)
+ if logg is not None:
+  logg.write('Draw String: '+draw_string+'\n')
+  logg.write('Cut String:  '+cut+'\n\n')
+ return htemp
+
+def friendCut(friend,cuts=['cutA','cutB']):
+ ''' takes ['pt>5'] and makes it [friend.pt>5] '''
  cut = []
  while cuts:
-  cut.append(friend+'.'+cuts.pop())
+  cut.append('%s.%s'%(friend,cuts.pop()))
+ #print(cut)
  return cut
 
-def cutString(cuts=['(2>1)','(2>1)']):
- ''' take an array (OF STRINGS) and turn it into a cut string'''
- string = '('+cuts.pop()
+def friendInsert(friend='MY',stringIn='string'):
+ ''' goes through string and adds <friend.> to each word
+     doesn't work if you have consecutive numbers in leafname '''
+ stringOut = ''
+ for i,c in enumerate(stringIn):
+  if i == 0 and stringIn[i].isalpha:
+   stringOut+=friend+'.'
+  if stringIn[i].isalpha() and not stringIn[i-1].isalnum():
+   stringOut+=friend+'.'
+  stringOut+=stringIn[i]
+ #print stringIn
+ #print stringOut
+ return stringOut
+
+def cutString(cuts=['cutA','cutB']):
+ ''' take an array and turn it into a cut string'''
+ string = '(%s' %(cuts.pop())
  while cuts:
-  string+=' && '+cuts.pop()
+  string+=' && %s' %(cuts.pop())
  string+=')'
  #print(string)
  return string
