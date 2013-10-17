@@ -15,13 +15,11 @@ def histogram(tree, var, sel, binning, xaxis='', title='',cal=1.):
  output_histo.SetTitle(title)
  return output_histo
 
-def hist2Dfriend(treeA,friendB,varA,varB,selA,selB,
+def hist2D(treeA,varA,varB,selA,selB,
 binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
- ''' make a 2D histogram, trees better be friends (: '''
- frVarB = friendInsert(friendB,varB)
- draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,frVarB,calB)
- cutB = friendCut(friendB,selB)
- cut = cutString(selA+cutB)
+ ''' make a 2D histogram '''
+ draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,varB,calB)
+ cut = cutString(selA+selB)
  htemp = TH2D("htemp","htemp",
   binA[0],binA[1],binA[2],
   binB[0],binB[1],binB[2])
@@ -29,17 +27,47 @@ binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
  htemp.GetXaxis().SetTitle(xaxis)
  htemp.GetYaxis().SetTitle(yaxis)
  htemp.SetTitle(title)
- #print(draw_string)
- #print(cut)
+ print(draw_string)
+ print(cut)
  if logg is not None:
   logg.write('Draw String: '+draw_string+'\n')
   logg.write('Cut String:  '+cut+'\n\n')
  return htemp
 
-def hist2D(treeA,friendB,varA,varB,selA,selB,
+def cutString(cuts=['cutA','cutB']):
+ ''' take an array and turn it into a cut string '''
+ string = '(%s' %(cuts.pop())
+ while cuts:
+  string+=' && %s' %(cuts.pop())
+ string+=')'
+ #print(string)
+ return string
+
+def eGraph(denom, num,color=ROOT.EColor.kBlue,marker=20):
+ ''' make an efficiency graph from num,denom called by efficiency '''
+ eff = ROOT.TGraphAsymmErrors(num, denom)
+ eff.SetMarkerStyle(marker)
+ eff.SetMarkerColor(color)
+ eff.SetMarkerSize(1.5)
+ eff.SetLineColor(color)
+ return eff
+
+def efficiency(ntuple,variable,cut,binning,denom,title,leg,color,marker,logg):
+ ''' called by script, define parameters for efficiency plot '''
+ num = hisogram(ntuple,variable,cut,binning)
+ efi = eGraph(denom,num,color,marker)
+ leg.AddEntry(efi,title)
+ efi.Draw('p')
+ logg.write(title+'\n')
+ logg.write(ntuple.GetDirectory().GetName()+'\n')
+ logg.write('Cut: '+cut+'\n\n')
+ return efi
+
+def hist2Dfriend(treeA,friendB,varA,varB,selA,selB,
 binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
- ''' make a 2D histogram, put friend in axis by hand '''
- draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,varB,calB)
+ ''' make a 2D histogram, trees better be friends (: '''
+ frVarB = friendInsert(friendB,varB)
+ draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,frVarB,calB)
  cutB = friendCut(friendB,selB)
  cut = cutString(selA+cutB)
  htemp = TH2D("htemp","htemp",
@@ -77,33 +105,4 @@ def friendInsert(friend='MY',stringIn='string'):
  #print stringIn
  #print stringOut
  return stringOut
-
-def cutString(cuts=['cutA','cutB']):
- ''' take an array and turn it into a cut string'''
- string = '(%s' %(cuts.pop())
- while cuts:
-  string+=' && %s' %(cuts.pop())
- string+=')'
- #print(string)
- return string
-
-def eGraph(denom, num,color=ROOT.EColor.kBlue,marker=20):
- ''' make an efficiency graph from num,denom called by efficiency '''
- eff = ROOT.TGraphAsymmErrors(num, denom)
- eff.SetMarkerStyle(marker)
- eff.SetMarkerColor(color)
- eff.SetMarkerSize(1.5)
- eff.SetLineColor(color)
- return eff
-
-def efficiency(ntuple,variable,cut,binning,denom,title,leg,color,marker,logg):
- ''' called by script, define parameters for efficiency plot '''
- num = hisogram(ntuple,variable,cut,binning)
- efi = eGraph(denom,num,color,marker)
- leg.AddEntry(efi,title)
- efi.Draw('p')
- logg.write(title+'\n')
- logg.write(ntuple.GetDirectory().GetName()+'\n')
- logg.write('Cut: '+cut+'\n\n')
- return efi
 

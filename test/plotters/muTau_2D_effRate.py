@@ -30,7 +30,7 @@ maxRecoTau  = 115
 canx = 900
 cany = 600
 
-binLep  = [binRecoLep,minRecoLep,maxRecoLep]
+binLep = [binRecoLep,minRecoLep,maxRecoLep]
 binTau = [binRecoTau,minRecoTau,maxRecoTau]
 
 baseName = saveWhere+extraName
@@ -39,50 +39,21 @@ baseName+='_tauL1%s'%(pTL1TauCut)
 if makeEfficiencyPlot == True: baseName+='_eff'
 if makeRatePlot       == True: baseName+='_rate'
 
-## Files ##    ###### MUON FILES NEED TO BE MADE ###
-# Lep Efficiency
-#lep_eff_name = '../data/TAUefficiency.root'
-#lep_eff_rlx_spot = 'rlxTauEfficiencyStage1B/Ntuple'
-#lep_eff_iso_spot = 'rlxTauEfficiencyStage1B/Ntuple'
-lep_eff_name = '../data/EGefficiency.root'
-lep_eff_rlx_spot = 'rlxEGEfficiencyStage1B/Ntuple'
-lep_eff_iso_spot = 'rlxEGEfficiencyStage1B/Ntuple'
-lep_eff_file = ROOT.TFile(lep_eff_name)
-lep_eff_rlx_ntuple = lep_eff_file.Get(lep_eff_rlx_spot)
-lep_eff_iso_ntuple = lep_eff_file.Get(lep_eff_iso_spot)
+# Efficiency File #
+eff_root_file_name = '../data/TAUefficiency.root'
+eff_rlx_spot = 'rlxTauEfficiencyStage1B/Ntuple'
+eff_iso_spot = 'isoTauEfficiencyStage1B/Ntuple'
+eff_file = ROOT.TFile(eff_root_file_name)
+eff_rlx_tree = eff_file.Get(eff_rlx_spot)
+eff_iso_tree = eff_file.Get(eff_iso_spot)
 
-# Tau Efficiency
-tau_eff_name = '../data/TAUefficiency.root'
-tau_eff_rlx_spot = 'rlxTauEfficiencyStage1B/Ntuple'
-tau_eff_iso_spot = 'rlxTauEfficiencyStage1B/Ntuple'
-
-rlxEffTauFriend = 'rlxEffTauFriend'
-isoEffTauFriend = 'isoEffTauFriend'
-lep_eff_rlx_ntuple.AddFriend(rlxEffTauFriend+"="+tau_eff_rlx_spot,tau_eff_name)
-lep_eff_iso_ntuple.AddFriend(isoEffTauFriend+"="+tau_eff_iso_spot,tau_eff_name)
-
-# Lep Rate
-lep_rate_name = '../data/UCTrates.root'
-lep_rate_rlx_spot = 'rlxEGUCTRateStage1B/Ntuple'
-lep_rate_iso_spot = 'rlxEGUCTRateStage1B/Ntuple'
-#lep_rate_rlx_spot = 'rlxTauUCTRateStage1B/Ntuple'
-#lep_rate_iso_spot = 'rlxTauUCTRateStage1B/Ntuple'
-lep_rate_ntuple_file = ROOT.TFile(lep_rate_name)
-lep_rate_rlx_ntuple = lep_rate_ntuple_file.Get(lep_rate_rlx_spot)
-lep_rate_iso_ntuple = lep_rate_ntuple_file.Get(lep_rate_iso_spot)
-
-# Tau Rate
-tau_rate_name = '../data/UCTrates.root'
-tau_rate_rlx_spot = 'rlxTauUCTRateStage1B/Ntuple'
-tau_rate_iso_spot = 'rlxTauUCTRateStage1B/Ntuple'
-#tau_rate_ntuple_file = ROOT.TFile(tau_rate_name)
-#tau_rate_rlx_ntuple = tau_rate_ntuple_file.Get(tau_rate_rlx_spot)
-#tau_rate_iso_ntuple = tau_rate_ntuple_file.Get(tau_rate_iso_spot)
-
-rlxRateTauFriend = 'rlxRateTauFriend'
-isoRateTauFriend = 'isoRateTauFriend'
-lep_rate_rlx_ntuple.AddFriend(rlxRateTauFriend+'='+tau_rate_rlx_spot,tau_rate_name)
-lep_rate_iso_ntuple.AddFriend(isoRateTauFriend+'='+tau_rate_iso_spot,tau_rate_name)
+# Rate File #
+rate_root_file_name = '../data/UCTrates.root'
+rate_rlx_spot = 'rlxTauUCTRateStage1B/Ntuple'
+rate_iso_spot = 'isoTauUCTRateStage1B/Ntuple'
+rate_file = ROOT.TFile(rate_root_file_name)
+rate_rlx_tree = rate_file.Get(rate_rlx_spot)
+rate_iso_tree = rate_file.Get(rate_iso_spot)
 
 log = open(baseName+'.log','w')
 
@@ -94,12 +65,8 @@ log.write('pTRecoLepCut  : ' + str(pTRecoLepCut  ) + '\n')
 log.write('pTRecoTauCut  : ' + str(pTRecoTauCut  ) + '\n') 
 log.write('pTL1LepCut    : ' + str(pTL1LepCut    ) + '\n') 
 log.write('pTL1TauCut    : ' + str(pTL1TauCut    ) + '\n') 
-log.write('minL1Lep      : ' + str(minRecoLep    ) + '\n') 
-log.write('maxL1Lep      : ' + str(maxRecoLep    ) + '\n') 
-log.write('binL1Lep      : ' + str(binRecoLep    ) + '\n') 
-log.write('minL1Tau      : ' + str(minRecoTau    ) + '\n') 
-log.write('maxL1Tau      : ' + str(maxRecoTau    ) + '\n') 
-log.write('binL1Tau      : ' + str(binRecoTau    ) + '\n') 
+log.write('binLep        : ' + str(binLep        ) + '\n') 
+log.write('binTau        : ' + str(binTau        ) + '\n') 
 log.write('Can X         : ' + str(canx          ) + '\n')
 log.write('Can Y         : ' + str(cany          ) + '\n\n')
 
@@ -113,26 +80,27 @@ tex.SetTextSize(0.07)
 tex.SetTextAlign(11)
 tex.SetNDC(True)
 
-###                                        ###
+###  #####################################  ###
 # Function to make 2D Lep-Tau Efficiency Plot #
-###                                        ###
+###  #####################################  ###
 
 def efficiencyTwoD(
- ntupleLep = None,
- effTauFriend = None,
+ tree = None,
  axisVarLep = 'l1gPt',
  axisVarTau = 'l1gPt',
- recoLepCut='(2>1)',
- recoTauCut='(2>1)',
- l1LepCut='(2>1)',
- l1TauCut='(2>1)',
- isoLepCut='(2>1)',
- isoTauCut='(2>1)',
- region = 'l1gRegionEt',
- binsLep=[10,15,115],
- binsTau=[10,20,120]
+ binsLep = [10,15,115],
+ binsTau = [10,20,120],
+ cutLepD = '[(2>1)]',
+ cutTauD = '[(2>1)]',
+ cutLepN = '[(2>1)]',
+ cutTauN = '[(2>1)]'
  ):
- ''' makes a 2D efficiency plot'''
+ ''' makes a 2D efficiency plot '''
+
+ log.write('EFFICIENCY PLOT\n')
+ log.write('===============\n\n')
+ log.write('File: '+eff_root_file_name+'\n')
+ log.write('Tree: '+tree.GetDirectory().GetName()+'\n\n')
  
  can = ROOT.TCanvas("can", "can", canx, cany)
 
@@ -147,24 +115,10 @@ def efficiencyTwoD(
   binsLep[0],binsLep[1],binsLep[2],
   binsTau[0],binsTau[1],binsTau[2])
  
- cutDLep  = [recoLepCut]
- cutNLep  = [recoLepCut]
- cutDTau = [recoTauCut]
- cutNTau = [recoTauCut]
- #log.write('Cut D Lep: '+str(cutDLep)+'\n')
- #log.write('Cut D Tau: '+str(cutDTau)+'\n')
- #den = make.hist2Dfriend(
- # ntupleLep,effTauFriend,axisVarLep,axisVarTau,cutDLep,cutDTau,[1,0.,999.],[1,0.,999.]
- #)
- #sf = den.GetBinContent(1,1)
- #for i in range(binsTau[0]):
- # for j in range(binsLep[0]):
- #  denom.SetBinContent(i+1,j+1,sf)
- #print(sf)
- 
  log.write('  DENOMINATOR\n')
- denom = make.hist2Dfriend(
-  ntupleLep,effTauFriend,axisVarLep,axisVarTau,cutDLep,cutDTau,binsLep,binsTau,logg=log
+ denom = make.hist2D(
+  tree,axisVarLep,axisVarTau,
+  cutLepD,cutTauD,binsLep,binsTau,logg=log
  )
 
  denom.Draw('COLZ')
@@ -173,19 +127,10 @@ def efficiencyTwoD(
  if r1 == 'save': can.SaveAs(baseName+'_denom.png')
 
  log.write('  NUMERATOR\n')
- cutNLep.append('l1gMatch')
- cutNLep.append(l1LepCut)
- cutNTau.append('l1gMatch')
- cutNTau.append(l1TauCut)
- #numer = make.hist2DfriendNum(
- # ntupleLep,effTauFriend,axisVarLep,'((rlxEffTauFriend.l1g2RegionEt)*rlxEffTauFriend.l1g2RegionPattern+(!(rlxEffTauFriend.l1g2RegionPattern))*(rlxEffTauFriend.l1gRegionEt))',cutNLep,cutNTau,binsLep,binsTau,logg=log
- #)
- numer = make.hist2Dfriend(
-  ntupleLep,effTauFriend,axisVarLep,axisVarTau,cutNLep,cutNTau,binsLep,binsTau,logg=log
+ numer = make.hist2D(
+  tree,axisVarLep,axisVarTau,
+  cutLepN,cutTauN,binsLep,binsTau,logg=log
  )
- #numer = make.hist2Dfriend(
- # ntupleLep,effTauFriend,axisVarLep,region,cutNLep,cutNTau,binsLep,binsTau,logg=log
- #)
  numer.SetName('numer')
  numer.Draw('COLZ')
  r2 = raw_input("Numerator Plot: type save to save\n")
@@ -204,27 +149,40 @@ def efficiencyTwoD(
 # Call the Efficiency Plot Function #
 ###                               ###
 if makeEfficiencyPlot:
+
+ # define cuts
+ recoLepCut  = 'recoPt>='+str(pTRecoLepCut)
+ recoTauCut  = 'recoPt>='+str(pTRecoTauCut)
+ l1LepCut    = 'l1gJetPt>='+str(pTL1LepCut)
+ l1TauCut    = 'l1gPt>='+str(pTL1TauCut)
+ isoLepCut   = '(2>1)'
+ isoTauCut   = '(2>1)'
+ otherLepCut = '(2>1)'
+ otherTauCut = '(2>1)'
+
+ # denominator cuts
+ cutDLep = [recoLepCut]
+ cutDTau = [recoTauCut]
+ # numerator cuts
+ cutNLep = [recoLepCut,l1LepCut,isoLepCut,otherLepCut]
+ cutNTau = [recoTauCut,l1TauCut,isoTauCut,otherTauCut]
+ 
+ region = '((l1g2RegionEt)*l1g2RegionPattern+(!(l1g2RegionPattern))*(l1gRegionEt))'
  eff = efficiencyTwoD(
-  ntupleLep  = lep_eff_rlx_ntuple,
-  effTauFriend = rlxEffTauFriend,
-  axisVarLep='recoPt',
+  tree  = eff_rlx_tree,
+  axisVarLep='l1gJetPt',
   axisVarTau='recoPt',
-  #axisVarLep='l1gPt',
-  #axisVarTau='l1gPt',
-  recoLepCut = 'recoPt>='+str(pTRecoLepCut),
-  recoTauCut = 'recoPt>='+str(pTRecoTauCut),
-  l1LepCut = 'l1gPt>='+str(pTL1LepCut),
-  l1TauCut = 'l1gPt>='+str(pTL1TauCut),
-  isoLepCut  = '(2>1)',
-  isoTauCut = '(2>1)',
-  region = '((l1g2RegionEt)*l1g2RegionPattern+(!(l1g2RegionPattern))*(l1gRegionEt))',
   binsLep  = binLep,
-  binsTau = binTau
+  binsTau = binTau,
+  cutLepD = cutDLep,
+  cutTauD = cutDTau,
+  cutLepN = cutNLep,
+  cutTauN = cutNTau,
  )
 
-###                           ###
+###  #######################  ###
 # Function to make 2D Rate plot #
-###                           ###
+###  #######################  ###
 #
 #def rate2D(
 #
