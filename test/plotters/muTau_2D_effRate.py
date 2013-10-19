@@ -9,24 +9,32 @@ import simpleMaker as make
 
 ## Choose Plots To Draw ##
 makeEfficiencyPlot = True
-makeRatePlot       = False
-combineRateAndEffi = False
+makeRatePlot       = True
+combineRateAndEffi = True
+doIso              = False
+
+if combineRateAndEffi: 
+ makeEfficiencyPlot = True
+ makeRatePlot       = True
 
 ## Choose Parameters ##
 saveWhere = '../plots/'
-extraName = 'lepTau2D'
+extraName = 'muTau2D'
 ISOTHRESHOLD  = 0.20
 ZEROBIAS_RATE = 15000000.00
 pTRecoLepCut   = 20
 pTRecoTauCut  = 20
 pTL1LepCut   = 10
 pTL1TauCut   = 10
+
 binRecoLep   = 100
 minRecoLep   = 15
 maxRecoLep   = 115
+
 binRecoTau  = 100
 minRecoTau  = 15
 maxRecoTau  = 115
+
 canx = 900
 cany = 600
 
@@ -36,8 +44,9 @@ binTau = [binRecoTau,minRecoTau,maxRecoTau]
 baseName = saveWhere+extraName
 baseName+='_lepL1%s'%(pTL1LepCut)
 baseName+='_tauL1%s'%(pTL1TauCut)
-if makeEfficiencyPlot == True: baseName+='_eff'
-if makeRatePlot       == True: baseName+='_rate'
+if doIso: baseName+='_iso'
+#if makeEfficiencyPlot : baseName+='_eff'
+#if makeRatePlot : baseName+='_rate'
 
 # Efficiency File #
 eff_root_file_name = '../data/TAUefficiency.root'
@@ -151,12 +160,13 @@ def efficiencyTwoD(
 if makeEfficiencyPlot:
 
  # define cuts
+ region = '((l1g2RegionEt)*l1g2RegionPattern+(!(l1g2RegionPattern))*(l1gRegionEt))'
  recoLepCut  = 'recoPt>='+str(pTRecoLepCut)
  recoTauCut  = 'recoPt>='+str(pTRecoTauCut)
  l1LepCut    = 'l1gJetPt>='+str(pTL1LepCut)
  l1TauCut    = 'l1gPt>='+str(pTL1TauCut)
- isoLepCut   = '(2>1)'
- isoTauCut   = '(2>1)'
+ isoLepCut   = '((l1gJetPt-'+region+')/'+region+' <'+str(ISOTHRESHOLD)+')'
+ isoTauCut   = '((l1gJetPt-'+region+')/'+region+' <'+str(ISOTHRESHOLD)+')'
  otherLepCut = '(2>1)'
  otherTauCut = '(2>1)'
 
@@ -164,10 +174,12 @@ if makeEfficiencyPlot:
  cutDLep = [recoLepCut]
  cutDTau = [recoTauCut]
  # numerator cuts
- cutNLep = [recoLepCut,l1LepCut,isoLepCut,otherLepCut]
- cutNTau = [recoTauCut,l1TauCut,isoTauCut,otherTauCut]
+ cutNLep = [recoLepCut,l1LepCut,otherLepCut]
+ cutNTau = [recoTauCut,l1TauCut,otherTauCut]
+ if doIso:
+  cutNLep.append(isoLepCut)
+  cutNTau.append(isoTauCut)
  
- region = '((l1g2RegionEt)*l1g2RegionPattern+(!(l1g2RegionPattern))*(l1gRegionEt))'
  eff = efficiencyTwoD(
   tree  = eff_rlx_tree,
   axisVarLep='l1gJetPt',
@@ -179,46 +191,106 @@ if makeEfficiencyPlot:
   cutLepN = cutNLep,
   cutTauN = cutNTau,
  )
+ eff.SetName('eff')
 
 ###  #######################  ###
 # Function to make 2D Rate plot #
 ###  #######################  ###
-#
-#def rate2D(
-#
-#)
+
+def rate2D(
+ tree = None,
+ axisVarLep='jetPt[0]',
+ axisVarTau='pt[0]',
+ binsLep = [10,10,100], 
+ binsTau = [10,10,100],
+ cutLepR = ['(2>1)'], 
+ cutTauR = ['(2>1)'] 
+):
+
+ log.write('RATE PLOT\n')
+ log.write('=========\n\n')
+ log.write('File: '+rate_root_file_name+'\n')
+ log.write('Tree: '+tree.GetDirectory().GetName()+'\n\n')
 
 
-# lepBins = []
-# for abin in range(binsLep[1],binsLep[2],binsLep[0]):
-#  lepBins.append(abin)
-# #print(lepBins)
-# 
-# for i in range(len(lepBins)-1):
-#  lepCutA = '%s>=%s' %(axisVar,lepBins[i])
-#  lepCutB = '%s<%s' %(axisVar,lepBins[i+1])
-#  #print(lepCutA)
-#  #print(lepCutB)
-#  cutNLep.append(lepCutA)
-#  cutNLep.append(lepCutB)
-#  #print(cutNLep)
-#  cutNLep.pop()
-#  cutNLep.pop()
-#
-# for lepCutVal in range(binsLep[1],binsLep[2],binsLep[0]):
-#  cutNLep.append(axisVar+'>%s'%(lepCutVal))
-#  print(cutNLep)
-#  
-#  numRow = TH1D("numRow","numRow",binsTau)
-#
-#  for tauCutVal in range(binsTau[1],binsTau[2],binsTau[0]):
-#   cutNTau.append(axisVar+'>%s'%(tauCutVal))
-#   print(cutNTau)
-#   cutNTau.pop()
-#
-#  cutNLep.pop()
+ can = ROOT.TCanvas("can", "can", canx, cany)
 
+ preRateHisto = TH2D("preRateHisto","Events At pT Levels",
+  binsLep[0],binsLep[1],binsLep[2],
+  binsTau[0],binsTau[1],binsTau[2])
+ rateHisto = TH2D("rateHisto","Integrated Rate",
+  binsLep[0],binsLep[1],binsLep[2],
+  binsTau[0],binsTau[1],binsTau[2])
 
+ preRateHisto = make.hist2D(tree,axisVarLep,axisVarTau,cutLepR,cutTauR,binsLep,binsTau)
+ preRateHisto.SetName('preRateHisto')
+ #preRateHisto.Draw('text')
+ preRateHisto.Draw('colz')
+ r4 = raw_input('Pre Rate Plot: type save to save\n')
+ if r4 == 'save': can.SaveAs(baseName+'_preRate.png') 
+
+ rateHisto = preRateHisto.Clone()
+ rateHisto.SetName('rateHisto')
+ for i in range(binsLep[0]):
+  binL = binsLep[0]-i
+  #binL = binsLep[0]-i-1 #to test handling of overflows
+  for j in range(binsTau[0]):
+   #print('i=%s'%(i))
+   #print('j=%s'%(j))
+   binT = binsTau[0]-j
+   #binT = binsTau[0]-j-1 #to test handling of overflows
+   #print('(%s,%s)'%(binT,binL))
+   this  = rateHisto.GetBinContent(binT,binL)
+   right = rateHisto.GetBinContent(binT+1,binL)
+   up    = rateHisto.GetBinContent(binT,binL+1)
+   diag  = rateHisto.GetBinContent(binT+1,binL+1)
+   #print('%s, %s, %s, %s'%(this,right,up,diag))
+   newEntry = this+right+up-diag
+   if i==0 and j==0: newEntry = this+right+up+diag
+   if i==0 and j!=0: newEntry = this+right+up
+   if i!=0 and j==0: newEntry = this+right+up
+   #print(newEntry)
+   #print('')
+   rateHisto.SetBinContent(binT,binL,newEntry)
+ #rateHisto.Draw('text')
+ rateHisto.Draw('colz')
+ r5 = raw_input('Rate Plot: type save to save\n')
+ if r5 == 'save': can.SaveAs(baseName+'_rate.png')
+ return rateHisto
+
+if makeRatePlot:
+ region = 'max((region2Disc.patternPass[0]*(region2Disc.totalEt[0])+((!region2Disc.patternPass[0])*(regionPt[0]))), pt[0])'
+ # define cuts
+ isoLepCut   = '((jetPt[0] - '+region+')/'+region+'<'+str(ISOTHRESHOLD)+')'
+ isoTauCut   = '((jetPt[0] - '+region+')/'+region+'<'+str(ISOTHRESHOLD)+')'
+ otherLepCut = '(2>1)'
+ otherTauCut = '(2>1)'
+
+ cutRLep = [otherLepCut]
+ cutRTau = [otherTauCut]
+ if doIso:
+  cutRLep.append(isoLepCut)
+  cutRTau.append(isoTauCut)
+
+ rate = rate2D(
+  tree = rate_rlx_tree,
+  axisVarLep='jetPt[0]',
+  axisVarTau='pt[0]',
+  binsLep  = binLep,
+  binsTau = binTau,
+  cutLepR = cutRLep,
+  cutTauR = cutRTau,
+ )
+ rate.SetName('rate')
+
+if combineRateAndEffi:
+ 
+ can = ROOT.TCanvas("can", "can", canx, cany)
+ 
+ eff.Draw("colz")
+ rate.Draw("cont3, sames")
+ r6 = raw_input('Combined Plot: type save to save\n')
+ if r6=='save': can.SaveAs(baseName+'_combined.png')
 
 log.close()
 

@@ -15,7 +15,7 @@ def histogram(tree, var, sel, binning, xaxis='', title='',cal=1.):
  output_histo.SetTitle(title)
  return output_histo
 
-def hist2D(treeA,varA,varB,selA,selB,
+def hist2D(tree,varA,varB,selA,selB,
 binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
  ''' make a 2D histogram '''
  draw_string = "(%s * %0.2f):(%s * %0.2f)" % (varA,calA,varB,calB)
@@ -23,7 +23,7 @@ binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
  htemp = TH2D("htemp","htemp",
   binA[0],binA[1],binA[2],
   binB[0],binB[1],binB[2])
- treeA.Draw(draw_string+'>>htemp',cut,style)
+ tree.Draw(draw_string+'>>htemp',cut,style)
  htemp.GetXaxis().SetTitle(xaxis)
  htemp.GetYaxis().SetTitle(yaxis)
  htemp.SetTitle(title)
