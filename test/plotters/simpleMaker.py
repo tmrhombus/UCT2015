@@ -3,17 +3,23 @@ Some simple common functions
 Authors: T.M.Perry, A.Levine, M.Cepeda, E.Friis UW Madison
 '''
 import ROOT
-from ROOT import TH2D
+from ROOT import TH1D,TH2D
 
-def histogram(tree, var, sel, binning, xaxis='', title='',cal=1.):
- ''' plot a variable using draw and return the histogram '''
- draw_string = "%s * %0.2f>>htemp(%s)" % (var,cal, ", ".join(str(x) for x in binning))
- #print draw_string
- tree.Draw(draw_string, sel, "goff")
- output_histo = ROOT.gDirectory.Get("htemp").Clone()
- output_histo.GetXaxis().SetTitle(xaxis)
- output_histo.SetTitle(title)
- return output_histo
+def hist(tree,var,cuts='[(2>1)]',binning=[10,-2,-2],xaxis='',title='',cal=1.,logg=None):
+ ''' make a 1D histogram '''
+ draw_string = "%s * %0.2f" %(var,cal)
+ cut = cutString(cuts)
+ htemp = TH1D('htemp','htemp',binning[0],binning[1],binning[2])
+ tree.Draw(draw_string+'>>htemp',cut)
+ htemp.GetXaxis().SetTitle(xaxis)
+ htemp.SetTitle(title)
+ print(draw_string)
+ print(cut)
+ if logg is not None:
+  logg.write('Draw String: '+draw_string+'\n')
+  logg.write('Cut String:  '+cut+'\n')
+  logg.write('Binning:     %s \n\n'%(binning)) 
+ return htemp 
 
 def hist2D(tree,varA,varB,selA,selB,
 binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
@@ -31,7 +37,9 @@ binA,binB,style='COLZ',xaxis='',yaxis='',title='',calA=1.,calB=1.,logg=None):
  print(cut)
  if logg is not None:
   logg.write('Draw String: '+draw_string+'\n')
-  logg.write('Cut String:  '+cut+'\n\n')
+  logg.write('Cut String:  '+cut+'\n')
+  logg.write('BinA:        %s \n'%(binA)) 
+  logg.write('BinB:        %s \n\n'%(binB)) 
  return htemp
 
 def cutString(cuts=['cutA','cutB']):
@@ -43,7 +51,7 @@ def cutString(cuts=['cutA','cutB']):
  #print(string)
  return string
 
-def eGraph(denom, num,color=ROOT.EColor.kBlue,marker=20):
+def efficiency(denom, num,color=ROOT.EColor.kBlue,marker=20):
  ''' make an efficiency graph from num,denom called by efficiency '''
  eff = ROOT.TGraphAsymmErrors(num, denom)
  eff.SetMarkerStyle(marker)
@@ -52,7 +60,10 @@ def eGraph(denom, num,color=ROOT.EColor.kBlue,marker=20):
  eff.SetLineColor(color)
  return eff
 
-def efficiency(ntuple,variable,cut,binning,denom,title,leg,color,marker,logg):
+
+
+
+def eGraph(ntuple,variable,cut,binning,denom,title,leg,color,marker,logg):
  ''' called by script, define parameters for efficiency plot '''
  num = hisogram(ntuple,variable,cut,binning)
  efi = eGraph(denom,num,color,marker)
