@@ -10,10 +10,10 @@ Authors: Isobel Ojalvo, Sridhara Dasu (kludger)
 import FWCore.ParameterSet.Config as cms
 
 
-#from Configuration.StandardSequences.Geometry_cff import *
-from Configuration.Geometry.GeometryIdeal_cff import *
 from Configuration.StandardSequences.RawToDigi_Data_cff import *
 from L1Trigger.UCT2015.Lut import *
+from L1Trigger.UCT2015.uct2015L1ExtraParticles_cfi import *
+
 
 # Modify the HCAL TPGs according to the proposed HTR modification.  If the HCAL
 # is above a given energy threshold, set the MIP bit.
@@ -55,6 +55,7 @@ UCT2015Producer = cms.EDProducer(
     "UCT2015Producer",
     puCorrect = cms.bool(True),
     useUICrho = cms.bool(True),
+    useHI = cms.bool(False),
     # All of these uint32 thresholds are in GeV.
     puETMax = cms.uint32(7),
     regionETCutForHT = cms.uint32(5),
@@ -63,8 +64,9 @@ UCT2015Producer = cms.EDProducer(
     maxGctEtaForSums = cms.uint32(17),
     jetSeed = cms.uint32(5),
     egtSeed = cms.uint32(5),
-    relativeIsolationCut = cms.double(1.0),
-    relativeJetIsolationCut = cms.double(1.0),
+    relativeIsolationCut = cms.double(10.),
+    relativeJetIsolationCut = cms.double(0.2),
+    switchOffTauIso= cms.double(60),
     egammaLSB = cms.double(1.0), # This has to correspond with the value from L1CaloEmThresholds
     regionLSB = RCTConfigProducers.jetMETLSB,
 )
@@ -106,7 +108,8 @@ uctEmulatorStep = cms.Sequence(
     * UCT2015EClusterProducer
     * UCT2015Producer
     * UCTStage1BProducer
-    * l1extraParticles
+#    * l1extraParticles
+#    * uct2015L1ExtraParticles
 )
 
 emulationSequence = cms.Sequence(uctDigiStep * uctEmulatorStep)

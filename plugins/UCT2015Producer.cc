@@ -87,11 +87,13 @@ private:
 
   bool puCorrect;
   bool useUICrho; // which PU denstity to use for energy correction determination
+  bool useHI; // do HI-style background subtraction
 
   unsigned int puETMax;
   unsigned int puLevel;
   //double puLevelUIC; // puLevel divided by puCount*Area, not multiply by 9.0
   unsigned int  puLevelUIC; // puLevel divided by puCount*Area, not multiply by 9.0
+  vector<int> puLevelHI;
 
   unsigned int sumET;
   int sumEx;
@@ -123,6 +125,7 @@ private:
   unsigned int egtSeed;
   double relativeIsolationCut;
   double relativeJetIsolationCut;
+  double switchOffTauIso;
   list<UCTCandidate> rlxTauList, corrRlxTauList;
   list<UCTCandidate> rlxEGList;
   list<UCTCandidate> isoTauList, corrIsoTauList;
@@ -148,6 +151,7 @@ unsigned const UCT2015Producer::N_JET_ETA = L1CaloRegionDetId::N_ETA * 4;
 UCT2015Producer::UCT2015Producer(const edm::ParameterSet& iConfig) :
   puCorrect(iConfig.getParameter<bool>("puCorrect")),
   useUICrho(iConfig.getParameter<bool>("useUICrho")),
+  useHI(iConfig.getParameter<bool>("useHI")),
   puETMax(iConfig.getParameter<unsigned int>("puETMax")),
   regionETCutForHT(iConfig.getParameter<unsigned int>("regionETCutForHT")),
   regionETCutForMET(iConfig.getParameter<unsigned int>("regionETCutForMET")),
@@ -157,11 +161,15 @@ UCT2015Producer::UCT2015Producer(const edm::ParameterSet& iConfig) :
   egtSeed(iConfig.getParameter<unsigned int>("egtSeed")),
   relativeIsolationCut(iConfig.getParameter<double>("relativeIsolationCut")),
   relativeJetIsolationCut(iConfig.getParameter<double>("relativeJetIsolationCut")),
+  switchOffTauIso(iConfig.getParameter<double>("switchOffTauIso")),
   egLSB_(iConfig.getParameter<double>("egammaLSB")),
   regionLSB_(iConfig.getParameter<double>("regionLSB"))
 {
   puLevel = 0;
   puLevelUIC = 0.0;
+  puLevelHI.resize(L1CaloRegionDetId::N_ETA);
+  for(unsigned i = 0; i < L1CaloRegionDetId::N_ETA; ++i)
+    puLevelHI[i] = 0;
 
   // Also declare we produce unpacked collections (which have more info)
   produces<UCTCandidateCollection>( "JetUnpacked" ) ;
@@ -296,6 +304,14 @@ void UCT2015Producer::puSubtraction()
   puLevel = 0;
   puLevelUIC = 0;
   double r_puLevelUIC=0.0;
+  double r_puLevelHI[L1CaloRegionDetId::N_ETA];
+  int etaCount[L1CaloRegionDetId::N_ETA];
+  for(unsigned i = 0; i < L1CaloRegionDetId::N_ETA; ++i)
+  {
+    puLevelHI[i] = 0;
+    r_puLevelHI[i] = 0.0;
+    etaCount[i] = 0;
+  }
 
   int puCount = 0;
   double Rarea=0.0;
@@ -307,14 +323,20 @@ void UCT2015Producer::puSubtraction()
       r_puLevelUIC += newRegion->et();
       Rarea += getRegionArea(newRegion->gctEta());
     }
+    r_puLevelHI[newRegion->gctEta()] += newRegion->et();
+    etaCount[newRegion->gctEta()]++;
   }
   // Add a factor of 9, so it corresponds to a jet.  Reduces roundoff error.
   puLevel *= 9;
-  puLevel = puLevel / puCount;
+  if(puCount != 0) puLevel = puLevel / puCount;
   r_puLevelUIC = r_puLevelUIC / Rarea;
   puLevelUIC=0;
   if (r_puLevelUIC > 0.) puLevelUIC = floor (r_puLevelUIC + 0.5);
 
+  for(unsigned i = 0; i < L1CaloRegionDetId::N_ETA; ++i)
+  {
+    puLevelHI[i] = floor(r_puLevelHI[i]/etaCount[i] + 0.5);
+  }
 }
 
 void UCT2015Producer::makeSums()
@@ -352,14 +374,20 @@ void UCT2015Producer::makeSums()
   unsigned int iPhi = L1CaloRegionDetId::N_PHI * physicalPhi / (2 * 3.1415927);
   METObject = UCTCandidate(MET, 0, physicalPhi);
   METObject.setInt("rgnPhi", iPhi);
+  METObject.setInt("rank", MET);
 
   double physicalPhiHT = atan2(sumHy, sumHx) + 3.1415927;
   iPhi = L1CaloRegionDetId::N_PHI * (physicalPhiHT) / (2 * 3.1415927);
   MHTObject = UCTCandidate(MHT, 0, physicalPhiHT);
   MHTObject.setInt("rgnPhi", iPhi);
+  MHTObject.setInt("rank", MHT);
 
   SETObject = UCTCandidate(sumET, 0, 0);
+  SETObject.setInt("rank", sumET);
+
   SHTObject = UCTCandidate(sumHT, 0, 0);
+  SHTObject.setInt("rank", sumHT);
+
 }
 
 void UCT2015Producer::makeJets() {
@@ -367,7 +395,10 @@ void UCT2015Producer::makeJets() {
   for(L1CaloRegionCollection::const_iterator newRegion = newRegions->begin();
       newRegion != newRegions->end(); newRegion++) {
     double regionET = regionPhysicalEt(*newRegion);
-    if(regionET > jetSeed) {
+    if(puCorrect && useHI)
+      regionET = std::max(0.,regionET -
+			  (puLevelHI[newRegion->gctEta()]*regionLSB_));
+    if((regionET > jetSeed) || (puCorrect && useHI)) {
       double neighborN_et = 0;
       double neighborS_et = 0;
       double neighborE_et = 0;
@@ -383,48 +414,72 @@ void UCT2015Producer::makeJets() {
 	if(deltaGctPhi(*newRegion, *neighbor) == 1 &&
 	   (newRegion->gctEta()    ) == neighbor->gctEta()) {
 	  neighborN_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborN_et = std::max(0.,neighborET -
+				    (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == -1 &&
 		(newRegion->gctEta()    ) == neighbor->gctEta()) {
 	  neighborS_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborS_et = std::max(0.,neighborET -
+				    (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == 0 &&
 		(newRegion->gctEta() + 1) == neighbor->gctEta()) {
 	  neighborE_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborE_et = std::max(0.,neighborET -
+				    (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == 0 &&
 		(newRegion->gctEta() - 1) == neighbor->gctEta()) {
 	  neighborW_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborW_et = std::max(0.,neighborET -
+				    (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == 1 &&
 		(newRegion->gctEta() + 1) == neighbor->gctEta()) {
 	  neighborNE_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborNE_et = std::max(0.,neighborET -
+				     (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == -1 &&
 		(newRegion->gctEta() - 1) == neighbor->gctEta()) {
 	  neighborSW_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborSW_et = std::max(0.,neighborET -
+				     (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == 1 &&
 		(newRegion->gctEta() - 1) == neighbor->gctEta()) {
 	  neighborNW_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborNW_et = std::max(0.,neighborET -
+				     (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
 	else if(deltaGctPhi(*newRegion, *neighbor) == -1 &&
 		(newRegion->gctEta() + 1) == neighbor->gctEta()) {
 	  neighborSE_et = neighborET;
+	  if(puCorrect && useHI)
+	    neighborSE_et = std::max(0.,neighborET -
+				     (puLevelHI[neighbor->gctEta()]*regionLSB_));
           nNeighbors++;
 	  continue;
 	}
@@ -472,6 +527,10 @@ void UCT2015Producer::makeJets() {
         UCTCandidate theJet(jetET, convertRegionEta(jetEta), convertRegionPhi(jetPhi));
         theJet.setInt("rgnEta", jetEta);
         theJet.setInt("rgnPhi", jetPhi);
+        theJet.setInt("rctEta",  newRegion->rctEta());
+        theJet.setInt("rctPhi", newRegion->rctPhi());
+        theJet.setInt("rank", jetET);
+
         // Embed the puLevel information in the jet object for later tuning
         theJet.setFloat("puLevel", puLevel);
         theJet.setFloat("puLevelUIC", puLevelUIC);
@@ -502,6 +561,8 @@ UCT2015Producer::correctJets(const list<UCTCandidate>& jets) {
     //apply Michael's jet correction function
     if (useUICrho){
       jpt = jetcorrUIC(jetET, jet->getInt("rgnEta"), jet->getFloat("puLevelUIC"));
+    }else if (useHI) {
+      jpt = jetET;
     }else{
       jpt = jetcorr(jetET, jet->getInt("rgnEta"), jet->getFloat("puLevel"));
     }
@@ -618,9 +679,13 @@ void UCT2015Producer::makeEGTaus() {
                 convertRegionEta(egtCand->regionId().ieta()),
                 convertRegionPhi(egtCand->regionId().iphi()));
 
+
             // Add extra information to the candidate
             egtauCand.setInt("rgnEta", egtCand->regionId().ieta());
             egtauCand.setInt("rgnPhi", egtCand->regionId().iphi());
+            egtauCand.setInt("rctEta", egtCand->regionId().rctEta());
+            egtauCand.setInt("rctPhi", egtCand->regionId().rctPhi());
+            egtauCand.setInt("rank", egtCand->rank());
             egtauCand.setFloat("associatedJetPt", -3);
             egtauCand.setFloat("associatedRegionEt", regionEt);
             egtauCand.setFloat("associatedSecondRegionEt", associatedSecondRegionEt);
@@ -653,18 +718,28 @@ void UCT2015Producer::makeEGTaus() {
                 //if (!region->tauVeto() && !region->mip())
                   rlxEGList.back().setFloat("associatedJetPt", jet->pt());
 
-		double isolation = regionEt - (regionLSB_*puLevel/9.) - et;   // Core isolation (could go less than zero)
-		double relativeIsolation = isolation / et;
-		double jetIsolation = jet->pt() - regionLSB_*puLevel - et;        // Jet isolation
-		double relativeJetIsolation = jetIsolation / et;
+		double jetIsolation = jet->pt() - regionEt;        // Jet isolation
+		double relativeJetIsolation = jetIsolation / regionEt;
 		// A 2x1 and 1x2 cluster above egtSeed passing relative isolation will be in tau list
-		if(relativeIsolation < relativeIsolationCut && relativeJetIsolation < relativeJetIsolationCut && egtCand->isolated()) {
+                if(relativeJetIsolation < relativeJetIsolationCut || regionEt > switchOffTauIso){
+//		if(relativeIsolation < relativeIsolationCut && relativeJetIsolation < relativeJetIsolationCut && egtCand->isolated()) { // We do not want L-Iso!
                   isoTauList.push_back(rlxTauList.back());
-		  // Good patterns of EG candidate + relative isolation makes it to IsoEG
-		  if(!region->tauVeto() && !region->mip()) {
-		    isoEGList.push_back(rlxEGList.back());
-		  }
 		}
+
+                double isolationEG = regionEt  - et;   // Core isolation (could go less than zero)
+                double relativeIsolationEG = isolationEG / et;
+                double jetIsolationEG = jet->pt() - et;        // Jet isolation
+                double relativeJetIsolationEG = jetIsolationEG / et;
+                // A 2x1 and 1x2 cluster above egtSeed passing relative isolation will be in tau list
+                if(relativeIsolationEG < relativeIsolationCut && relativeJetIsolationEG < relativeJetIsolationCut){
+                  // Good patterns of EG candidate + relative isolation makes it to IsoEG
+                  if(!region->tauVeto() && !region->mip()) {
+                    isoEGList.push_back(rlxEGList.back());
+                  }
+                }
+
+
+
 		break;
 	      }
 	    }
