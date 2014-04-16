@@ -8,9 +8,9 @@ from ROOT import TH1D,TH2D
 import simpleMaker as make
 
 ## Choose Plots To Draw ##
-makeEfficiencyPlot = True
+makeEfficiencyPlot = False
 makeRatePlot       = True
-combineRateAndEffi = True
+combineRateAndEffi = False
 doIso              = False
 
 if combineRateAndEffi: 
@@ -18,20 +18,20 @@ if combineRateAndEffi:
  makeRatePlot       = True
 
 ## Choose Parameters ##
-saveWhere = '../plots/'
+saveWhere = '../plots/XX_'
 extraName = 'muTau2D'
 ISOTHRESHOLD  = 0.20
 ZEROBIAS_RATE = 15000000.00
-pTRecoLepCut   = 20
+pTRecoLepCut   = 15
 pTRecoTauCut  = 20
-pTL1LepCut   = 10
-pTL1TauCut   = 10
+pTL1LepCut   = 15
+pTL1TauCut   = 20
 
-binRecoLep   = 100
+binRecoLep   = 5
 minRecoLep   = 15
 maxRecoLep   = 115
 
-binRecoTau  = 100
+binRecoTau  = 5
 minRecoTau  = 15
 maxRecoTau  = 115
 
@@ -49,17 +49,17 @@ if doIso: baseName+='_iso'
 #if makeRatePlot : baseName+='_rate'
 
 # Efficiency File #
-eff_root_file_name = '../data/TAUefficiency.root'
-eff_rlx_spot = 'rlxTauEfficiencyStage1B/Ntuple'
-eff_iso_spot = 'isoTauEfficiencyStage1B/Ntuple'
+eff_root_file_name = '../data/uctEfficiencyMuJetSkim.root'
+eff_rlx_spot = 'Efficiency2D/Ntuple'
+eff_iso_spot = 'Efficiency2D/Ntuple'
 eff_file = ROOT.TFile(eff_root_file_name)
 eff_rlx_tree = eff_file.Get(eff_rlx_spot)
 eff_iso_tree = eff_file.Get(eff_iso_spot)
 
 # Rate File #
-rate_root_file_name = '../data/UCTrates.root'
-rate_rlx_spot = 'rlxTauUCTRateStage1B/Ntuple'
-rate_iso_spot = 'isoTauUCTRateStage1B/Ntuple'
+rate_root_file_name = '../data/uctRateMuJetSkim.root'
+rate_rlx_spot = 'Rate2D/Ntuple'
+rate_iso_spot = 'Rate2D/Ntuple'
 rate_file = ROOT.TFile(rate_root_file_name)
 rate_rlx_tree = rate_file.Get(rate_rlx_spot)
 rate_iso_tree = rate_file.Get(rate_iso_spot)
@@ -149,6 +149,8 @@ def efficiencyTwoD(
  effHisto.SetName('effHisto')
  effHisto.Divide(denom)
  effHisto.Draw("COLZ")
+ effHisto.GetXaxis().SetTitle('p_{T}^{#tau}')
+ effHisto.GetYaxis().SetTitle('p_{T}^{#mu}')
  r3 = raw_input("Efficiency Plot: type save to save\n")
  if r3 == 'save': can.SaveAs(baseName+'_effic.png')
  
@@ -160,11 +162,14 @@ def efficiencyTwoD(
 if makeEfficiencyPlot:
 
  # define cuts
+ recoLepCut  = 'ptMu>='+str(pTRecoLepCut)
+ recoTauCut  = 'ptTau>='+str(pTRecoTauCut)
+ l1LepCut    = 'ptL1Mu>='+str(pTL1LepCut)
+ l1TauCut    = 'ptL1Tau>='+str(pTL1TauCut)
+ matchLep    = 'matchL1Mu'
+ matchTau    = 'matchL1Tau'
+
  region = '((l1g2RegionEt)*l1g2RegionPattern+(!(l1g2RegionPattern))*(l1gRegionEt))'
- recoLepCut  = 'recoPt>='+str(pTRecoLepCut)
- recoTauCut  = 'recoPt>='+str(pTRecoTauCut)
- l1LepCut    = 'l1gJetPt>='+str(pTL1LepCut)
- l1TauCut    = 'l1gPt>='+str(pTL1TauCut)
  isoLepCut   = '((l1gJetPt-'+region+')/'+region+' <'+str(ISOTHRESHOLD)+')'
  isoTauCut   = '((l1gJetPt-'+region+')/'+region+' <'+str(ISOTHRESHOLD)+')'
  otherLepCut = '(2>1)'
@@ -174,16 +179,16 @@ if makeEfficiencyPlot:
  cutDLep = [recoLepCut]
  cutDTau = [recoTauCut]
  # numerator cuts
- cutNLep = [recoLepCut,l1LepCut,otherLepCut]
- cutNTau = [recoTauCut,l1TauCut,otherTauCut]
+ cutNLep = [recoLepCut,l1LepCut,matchLep,otherLepCut]
+ cutNTau = [recoTauCut,l1TauCut,matchTau,otherTauCut]
  if doIso:
   cutNLep.append(isoLepCut)
   cutNTau.append(isoTauCut)
  
  eff = efficiencyTwoD(
   tree  = eff_rlx_tree,
-  axisVarLep='l1gJetPt',
-  axisVarTau='recoPt',
+  axisVarLep='ptMu',
+  axisVarTau='ptTau',
   binsLep  = binLep,
   binsTau = binTau,
   cutLepD = cutDLep,
@@ -199,8 +204,8 @@ if makeEfficiencyPlot:
 
 def rate2D(
  tree = None,
- axisVarLep='jetPt[0]',
- axisVarTau='pt[0]',
+ axisVarLep='ptMu',
+ axisVarTau='ptTau',
  binsLep = [10,10,100], 
  binsTau = [10,10,100],
  cutLepR = ['(2>1)'], 
@@ -211,7 +216,8 @@ def rate2D(
  log.write('=========\n\n')
  log.write('File: '+rate_root_file_name+'\n')
  log.write('Tree: '+tree.GetDirectory().GetName()+'\n\n')
-
+ #log.write('X axis: %s\n'%(axisVarTau))
+ #log.write('Y axis: %s\n'%(axisVarLep))
 
  can = ROOT.TCanvas("can", "can", canx, cany)
 
@@ -222,23 +228,23 @@ def rate2D(
   binsLep[0],binsLep[1],binsLep[2],
   binsTau[0],binsTau[1],binsTau[2])
 
- preRateHisto = make.hist2D(tree,axisVarLep,axisVarTau,cutLepR,cutTauR,binsLep,binsTau)
+ preRateHisto = make.hist2D(tree,axisVarLep,axisVarTau,cutLepR,cutTauR,binsLep,binsTau,logg=log)
  preRateHisto.SetName('preRateHisto')
- #preRateHisto.Draw('text')
- preRateHisto.Draw('colz')
+ preRateHisto.Draw('text')
+ #preRateHisto.Draw('colz')
  r4 = raw_input('Pre Rate Plot: type save to save\n')
  if r4 == 'save': can.SaveAs(baseName+'_preRate.png') 
 
  rateHisto = preRateHisto.Clone()
  rateHisto.SetName('rateHisto')
  for i in range(binsLep[0]):
-  binL = binsLep[0]-i
-  #binL = binsLep[0]-i-1 #to test handling of overflows
+  #binL = binsLep[0]-i
+  binL = binsLep[0]-i-1 #to test handling of overflows
   for j in range(binsTau[0]):
    #print('i=%s'%(i))
    #print('j=%s'%(j))
-   binT = binsTau[0]-j
-   #binT = binsTau[0]-j-1 #to test handling of overflows
+   #binT = binsTau[0]-j
+   binT = binsTau[0]-j-1 #to test handling of overflows
    #print('(%s,%s)'%(binT,binL))
    this  = rateHisto.GetBinContent(binT,binL)
    right = rateHisto.GetBinContent(binT+1,binL)
@@ -252,8 +258,10 @@ def rate2D(
    #print(newEntry)
    #print('')
    rateHisto.SetBinContent(binT,binL,newEntry)
- #rateHisto.Draw('text')
- rateHisto.Draw('colz')
+ rateHisto.GetXaxis().SetTitle('p_{T}^{#tau}')
+ rateHisto.GetYaxis().SetTitle('p_{T}^{#mu}')
+ rateHisto.Draw('text')
+ #rateHisto.Draw('colz')
  r5 = raw_input('Rate Plot: type save to save\n')
  if r5 == 'save': can.SaveAs(baseName+'_rate.png')
  return rateHisto
@@ -274,8 +282,8 @@ if makeRatePlot:
 
  rate = rate2D(
   tree = rate_rlx_tree,
-  axisVarLep='jetPt[0]',
-  axisVarTau='pt[0]',
+  axisVarLep='ptMu',
+  axisVarTau='ptTau',
   binsLep  = binLep,
   binsTau = binTau,
   cutLepR = cutRLep,
@@ -289,6 +297,7 @@ if combineRateAndEffi:
  
  eff.Draw("colz")
  rate.Draw("cont3, sames")
+
  r6 = raw_input('Combined Plot: type save to save\n')
  if r6=='save': can.SaveAs(baseName+'_combined.png')
 

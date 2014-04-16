@@ -7,11 +7,11 @@ import ROOT
 
 efficiencyPlots=True
 # which curves to draw on rate and efficiency plots
-drawUCTIso = False
-drawUCTRlx = False
+drawUCTIso = True
+drawUCTRlx = True
 drawUCTIso_byhand = False
 drawL1Iso = False
-drawL1Rlx = True
+drawL1Rlx = False
 
 ##################
 # Set Parameters #
@@ -24,17 +24,20 @@ ISOTHRESHOLD=0.40
 L1_CALIB_FACTOR = 1.0
 L1G_CALIB_FACTOR = 1.0
 ZEROBIAS_RATE=15000000.00
-saveWhere='../plots/Tau_L1_Efficiency'
+#saveWhere='../plots/Tau_Efficiency_ECALseed'
+saveWhere='../plots/Tau2x1_Efficiency'
 
 ########
 # File #
 ########
 #Efficiency
-eff_ntuple = '../data/Tau_Efficiency.root'
+eff_ntuple = '../data/h2tau.root'
 eff_ntuple_file = ROOT.TFile(eff_ntuple)
-# L1
-eff_rlx_spot = 'rlxTauEfficiency/Ntuple'
-eff_iso_spot = 'isoTauEfficiency/Ntuple'
+#
+eff_rlx_spot = 'rlxTauEcalSeedEfficiency/Ntuple'
+#eff_rlx_spot = 'rlxTauEfficiency/Ntuple'
+eff_iso_spot = 'isoTauEcalSeedEfficiency/Ntuple'
+#eff_iso_spot = 'isoTauEfficiency/Ntuple'
 eff_rlx_eg_ntuple = eff_ntuple_file.Get(eff_rlx_spot)
 eff_iso_eg_ntuple = eff_ntuple_file.Get(eff_iso_spot)
 
@@ -78,10 +81,10 @@ tex.SetTextAlign(11)
 tex.SetNDC(True)
 
 colorUR=ROOT.EColor.kGreen+3
-markerUR=25
+markerUR=21
 #markerUR=21
-colorUI=ROOT.EColor.kCyan+3
-markerUI=25
+colorUI=ROOT.EColor.kBlue
+markerUI=20
 colorUIbh=ROOT.EColor.kBlack
 #colorUIbh=ROOT.EColor.kGreen+3
 #colorUIbh=ROOT.EColor.kBlue
@@ -272,9 +275,9 @@ if efficiencyPlots == True:
   binPt,
   eff_rlx_eg_ntuple, eff_iso_eg_ntuple,
   recoPtCut = '(recoPt >= '+str(recoPtVal)+')',
-  #l1PtCut = '(l1Pt >= '+str(l1ptVal)+')',
-  l1gPtCut = '(l1gRegionEt >= '+str(l1ptVal)+')',
-  #l1gPtCut = '(l1gPt >= '+str(l1ptVal)+')',
+  l1PtCut = '(l1Pt >= '+str(l1ptVal)+')',
+  #l1gPtCut = '(l1gRegionEt >= '+str(l1ptVal)+')',
+  l1gPtCut = '(l1gPt >= '+str(l1ptVal)+')',
   # 12x12-4x4 
   isoCut='(l1gPt>=60||(l1gJetPt-l1gRegionEt)/l1gRegionEt<'+str(ISOTHRESHOLD)+')',
   # 12x12 - 2x1

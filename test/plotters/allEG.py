@@ -10,7 +10,7 @@ import ROOT
 ################
 resolutionPlots = False
 efficiencyPlots = True
-ratePlots = True
+ratePlots = False
 
 # which curves to draw on rate and efficiency plots
 aIsoID = True      # I region + ID + ISO
@@ -21,9 +21,9 @@ aPUa = False        # P region + ID + ISO + PU subtraction (puValA)
 aPUb = False        # P region + ID + ISO + PU subtraction (puValB)
 aMC_isoID = False   # Mi MC region + ID + ISO
 aMC_lOne = False    # Mc MC current
-al1b_IsoID = True  # Bi L1b region + ID + ISO
-al1b_NoIsoID = True # Bn L1B region + ID
-al1b_EGT = True  # Br L1b region
+al1b_IsoID = False  # Bi L1b region + ID + ISO
+al1b_NoIsoID = False # Bn L1B region + ID
+al1b_EGT = False  # Br L1b region
 
 #rate plot
 rateLine = False # line at recoPtVal
@@ -50,7 +50,7 @@ saveWhere='../plots/EG_'
 # File #
 ########
 #Efficiency
-eff_ntuple = '../data/uct_eg_efficiency_eic3.root'
+eff_ntuple = '../data/efficiency_cutAt60.root'
 eff_ntuple_file = ROOT.TFile(eff_ntuple)
 # L1
 eff_rlx_spot = 'rlxEGEfficiency/Ntuple'

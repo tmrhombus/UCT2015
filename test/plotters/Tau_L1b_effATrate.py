@@ -137,6 +137,8 @@ def make_l1_efficiency(denom, num,color=ROOT.EColor.kBlue,marker=20):
 
 def effi_histo(ntuple,variable,cut,binning,denom,title,leg,color,marker,logg):
  num = make_plot(ntuple,variable,cut,binning)
+ num.Draw()
+ raw_input('numerator\n')
  efi = make_l1_efficiency(denom,num,color,marker)
  leg.AddEntry(efi,title)
  efi.Draw('p')
@@ -175,6 +177,8 @@ def compare_efficiencies(
   cutD,
   binning
  )
+ denom.Draw()
+ raw_input('Denom\n')
 
  log.write('_____________________________\n')
  log.write('-------- Efficiency ---------\n\n')
@@ -206,8 +210,8 @@ def compare_efficiencies(
  marker3=22
  
  tex.SetTextSize(0.04)
-# if rate5k:
-#  tex.DrawLatex(0.15,0.85,'Rate: 5kHz @ L=1e34')
+ if rate5k:
+  tex.DrawLatex(0.15,0.85,'Rate: 5kHz @ L=1e34')
  if rate10k:
   tex.DrawLatex(0.15,0.85,'Rate: 10kHz @ L=1e34')
  if rate15k:

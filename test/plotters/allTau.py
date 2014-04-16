@@ -10,7 +10,7 @@ import ROOT
 ################
 resolutionPlots = False
 efficiencyPlots = True
-ratePlots = True
+ratePlots = False
 
 # which curves to draw on rate and efficiency plots
 aIso = True    # I region + Iso<ISOTHRESHOLD
